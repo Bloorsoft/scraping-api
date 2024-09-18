@@ -6,7 +6,10 @@ module.exports = async function (fastify, opts) {
     try {
       const url = request.body.url;
       console.log("url", url);
-      const browser = await puppeteer.launch({ headless: true });
+      const browser = await puppeteer.launch({
+        headless: true,
+        args: ["--no-sandbox", "--disable-setuid-sandbox"],
+      });
       const page = await browser.newPage();
       await page.goto(url, { waitUntil: "networkidle2" });
 
@@ -26,7 +29,7 @@ module.exports = async function (fastify, opts) {
       await browser.close();
       return { markdown: textContent.trim() };
     } catch (error) {
-      return { status: 500, message: error.message };
+      reply.status(500).send({ error: error.message });
     }
   });
 };

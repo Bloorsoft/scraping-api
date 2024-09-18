@@ -1,30 +1,33 @@
-'use strict'
+"use strict";
 
-const path = require('node:path')
-const AutoLoad = require('@fastify/autoload')
+const path = require("node:path");
+const AutoLoad = require("@fastify/autoload");
+const Fastify = require("fastify");
 
-// Pass --options via CLI arguments in command to enable these options.
-const options = {}
+const port = process.env.PORT || 3000;
 
-module.exports = async function (fastify, opts) {
-  // Place here your custom code!
+const fastify = Fastify({
+  logger: true,
+});
 
-  // Do not touch the following lines
+fastify.register(AutoLoad, {
+  dir: path.join(__dirname, "plugins"),
+  options: {},
+});
 
-  // This loads all plugins defined in plugins
-  // those should be support plugins that are reused
-  // through your application
-  fastify.register(AutoLoad, {
-    dir: path.join(__dirname, 'plugins'),
-    options: Object.assign({}, opts)
-  })
+fastify.register(AutoLoad, {
+  dir: path.join(__dirname, "routes"),
+  options: {},
+});
 
-  // This loads all plugins defined in routes
-  // define your routes in one of these
-  fastify.register(AutoLoad, {
-    dir: path.join(__dirname, 'routes'),
-    options: Object.assign({}, opts)
-  })
-}
+const start = async () => {
+  try {
+    await fastify.listen({ port, host: "0.0.0.0" });
+    console.log(`Server is running on port ${port}`);
+  } catch (err) {
+    fastify.log.error(err);
+    process.exit(1);
+  }
+};
 
-module.exports.options = options
+start();
