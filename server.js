@@ -1,6 +1,9 @@
 import Fastify from "fastify";
 import puppeteer from "puppeteer";
 import { load } from "cheerio";
+import path from "path";
+import AutoLoad from "@fastify/autoload";
+
 // Parse command line arguments
 const port = process.argv[2] || 3000;
 
@@ -9,7 +12,13 @@ const fastify = Fastify({
   logger: true, // Enable logger
 });
 
-// Create a routes for homepage and about
+// Register autoload plugin
+fastify.register(AutoLoad, {
+  dir: path.join(__dirname, "routes"),
+  options: {},
+});
+
+// Register the route directly
 fastify.post("/get-markdown", async function handler(request, reply) {
   try {
     const url = request.body.url;
@@ -18,14 +27,12 @@ fastify.post("/get-markdown", async function handler(request, reply) {
     const page = await browser.newPage();
     await page.goto(url, { waitUntil: "networkidle2" });
 
-    // Wait for an element that indicates the page has fully loaded
-    await page.waitForSelector("body"); // Adjust this selector to a specific element that appears after verification
+    await page.waitForSelector("body");
 
     const html = await page.content();
     const $ = load(html);
     let textContent = "";
 
-    // Select only text nodes within specific tags
     $("h1, h2, h3, p, li, span").each((i, elem) => {
       const text = $(elem).text().trim();
       if (text) {
@@ -43,7 +50,7 @@ fastify.post("/get-markdown", async function handler(request, reply) {
 // Run web server
 const start = async () => {
   try {
-    await fastify.listen({ port: 3001 });
+    await fastify.listen({ port });
     console.log(`Server is running on port ${port}`);
   } catch (err) {
     fastify.log.error(err);
